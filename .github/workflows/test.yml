@@ -1,0 +1,22 @@
+name: Game Studio AI tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+        working-directory: server
+      - run: |
+          node --check server/index.js
+          node --check server/store.js
+          node --check web/app.js
