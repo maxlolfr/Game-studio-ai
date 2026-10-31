@@ -5,6 +5,21 @@ panel.innerHTML='<h2>🎮 Jeux jouables</h2><p class="muted">Premier prototype i
 const anchor=document.querySelector("section.panel");anchor.parentNode.insertBefore(panel,anchor);
 const $v=id=>document.getElementById(id);
 function decodeData(uri){const pos=uri.indexOf(",");if(pos<0)return"";const head=uri.slice(0,pos),body=uri.slice(pos+1);if(head.includes(";base64")){try{return atob(body)}catch(e){return""}}try{return decodeURIComponent(body)}catch(e){return""}}
-function assemble(files){const main=files.find(f=>f.name==="index.html");if(!main)throw Error("Ajoute un fichier index.html dans l'atelier de Léa.");let html=decodeData(main.data);for(const f of files){if(f===main)continue;const text=decodeData(f.data);if(f.name.endsWith(".css")){const escaped=f.name.replace(/[.*+?^$()|[\]{}]/g,"\\$&");const re=new RegExp('<link\\s+[^>]*href=["\\\']'+escaped+'["\\\'][^>]*>',"gi");html=html.replace(re,()=>"<style>"+text+"</style>")}if(f.name.endsWith(".js")){const escaped=f.name.replace(/[.*+?^$()|[\]{}]/g,"\\$&");const re=new RegExp('<script\\s+[^>]*src=["\\\']'+escaped+'["\\\'][^>]*>\\s*<\\/script>',"gi");html=html.replace(re,()=>"<script>"+text.replace(/<\\/script/gi,"<\\/script")+"</script>")}}return html}
+function assemble(files){
+const main=files.find(f=>f.name==="index.html");
+if(!main)throw Error("Ajoute un fichier index.html dans l'atelier de Léa.");
+let html=decodeData(main.data);
+for(const f of files){
+if(f===main)continue;
+const content=decodeData(f.data);
+if(f.name.endsWith(".css")){
+for(const q of ['"',"'"]){const tag='<link rel="stylesheet" href='+q+f.name+q+'>';html=html.split(tag).join("<style>"+content+"</style>")}
+}
+if(f.name.endsWith(".js")){
+for(const q of ['"',"'"]){const tag='<script src='+q+f.name+q+'></script>';html=html.split(tag).join("<script>"+content+"</script>")}
+}
+}
+return html;
+}
 $v("bundleExport").onclick=()=>{const project=$v("bundleProject").value;try{const files=db.files.filter(f=>f.project===project);const html=assemble(files);const url=URL.createObjectURL(new Blob([html],{type:"text/html"}));const a=document.createElement("a");a.href=url;a.download=project.toLowerCase().replace(/\s+/g,"-")+".html";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$v("bundleStatus").textContent="Jeu exporté. Teste le fichier avant publication."}catch(e){$v("bundleStatus").textContent=e.message}};
 })();
