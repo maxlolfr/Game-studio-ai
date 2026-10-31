@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Eternal Guardians — Prototype</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#101127;color:#f9ecff;font-family:system-ui;text-align:center}header{padding:9px}h1{font-size:19px;margin:4px}p{font-size:12px;margin:4px;color:#c5b8dc}canvas{display:block;margin:auto;touch-action:none;background:#101127;border:2px solid #6c527f;max-width:100%;max-height:78vh}button{background:#ffbc6c;color:#24132f;border:0;border-radius:8px;padding:11px 20px;font-weight:bold;margin:8px}</style></head>
+<body><header><h1>⚔️ ETERNAL GUARDIANS</h1><p>Kael · Nox · Sol — déplace ton doigt pour esquiver et tirer</p></header><canvas id="game" width="360" height="620" aria-label="Jeu de tir vertical"></canvas><button id="restart">Recommencer</button><p id="status" role="status">Survis aux vagues ennemies !</p>
+<script>
+"use strict";
+const c=document.getElementById("game"),ctx=c.getContext("2d"),W=c.width,H=c.height;let player,enemies,shots,particles,score,lives,frame,over,raf,targetX;
+function reset(){player={x:W/2,y:H-75};enemies=[];shots=[];particles=[];score=0;lives=3;frame=0;over=false;targetX=player.x;cancelAnimationFrame(raf);tick()}
+function pointer(e){const rect=c.getBoundingClientRect();targetX=Math.max(22,Math.min(W-22,(e.clientX-rect.left)*W/rect.width))}
+c.addEventListener("pointerdown",e=>{c.setPointerCapture(e.pointerId);pointer(e)});c.addEventListener("pointermove",e=>{if(e.buttons||e.pointerType==="touch")pointer(e)});
+document.getElementById("restart").onclick=reset;
+function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+function hit(a,b,range){return Math.hypot(a.x-b.x,a.y-b.y)<range}
+function tick(){frame++;player.x+=(targetX-player.x)*.2;ctx.clearRect(0,0,W,H);const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#13172d");g.addColorStop(1,"#302048");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+for(let i=0;i<35;i++){ctx.fillStyle="#665b96";ctx.fillRect((i*73+19)%W,(i*137+frame*.35)%H,2,2)}
+if(frame%34===0){shots.push({x:player.x,y:player.y-25,vy:-9})}
+if(frame%Math.max(24,66-Math.floor(score/100))===0)enemies.push({x:25+Math.random()*(W-50),y:-20,speed:1.6+Math.min(2.8,score/250),hp:2});
+for(const s of shots){s.y+=s.vy;circle(s.x,s.y,4,"#ffe88b")}
+for(const e of enemies){e.y+=e.speed;circle(e.x,e.y,15,"#a64a9c");circle(e.x,e.y,7,"#f6a3d5");if(hit(e,player,27)){e.hp=0;lives--;particles.push({x:e.x,y:e.y,t:20})}if(e.y>H+20){e.hp=0;lives--}for(const s of shots){if(s.y>-10&&hit(e,s,17)){e.hp--;s.y=-100;if(e.hp<=0){score+=10;particles.push({x:e.x,y:e.y,t:20})}break}}}
+enemies=enemies.filter(e=>e.hp>0);shots=shots.filter(s=>s.y>-20);for(const p of particles){circle(p.x,p.y,20-p.t/2,"#ffd36b");p.t--}particles=particles.filter(p=>p.t>0);
+circle(player.x,player.y,19,"#e9c46d");circle(player.x,player.y,11,"#6287e5");ctx.fillStyle="#fff";ctx.fillRect(player.x-3,player.y-27,6,14);
+circle(player.x-30,player.y+9,10,"#78d5ff");circle(player.x+30,player.y+9,10,"#ffae45");
+ctx.fillStyle="#fff";ctx.font="bold 16px system-ui";ctx.fillText("Score : "+score,12,25);ctx.fillText("♥ ".repeat(Math.max(0,lives)),W-85,25);
+if(lives<=0){over=true;ctx.fillStyle="#100d20cc";ctx.fillRect(0,0,W,H);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 28px system-ui";ctx.fillText("FIN DE PARTIE",W/2,H/2);ctx.font="18px system-ui";ctx.fillText("Score : "+score,W/2,H/2+35);ctx.textAlign="start";document.getElementById("status").textContent="Partie terminée — recommence pour améliorer ton score."}else{raf=requestAnimationFrame(tick)}}
+reset();
+</script></body></html>
